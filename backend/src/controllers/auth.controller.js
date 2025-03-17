@@ -1,4 +1,4 @@
-import { generateToken } from "../lib/utils.js";;
+import { generateToken } from "../lib/utils.js";
 import bcrypt from "bcrypt";
 import User from "../modals/user.modal.js";
 export const signup = async (req, res) => {
@@ -44,9 +44,53 @@ export const signup = async (req, res) => {
   }
 };
 
-export const login = (req, res) => {
-  res.send("signup");
+export const login = async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ message: "Please fill all fields" });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({ message: "User does not exist" });
+    }
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordCorrect) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const token = generateToken(user._id, res);
+    res.status(200).json({
+      _id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      token: "Bearer " + token,
+      profilePic: user.profilePic,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Internal server  error occured" });
+  }
 };
 export const logout = (req, res) => {
-  res.send("signup");
+  try {
+    res.cookie("jwt", "", { maxAge: 0 });
+
+    res.status(200).json({ message: "User logged out successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Internal server  error occured" });
+  }
+};
+
+export const updateProfile = (req, res) => {
+  try {
+    res.cookie("jwt", "", { maxAge: 0 });
+
+    res.status(200).json({ message: "User logged out successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Internal server  error occured" });
+  }
 };
